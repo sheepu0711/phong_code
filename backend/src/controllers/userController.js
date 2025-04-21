@@ -1,114 +1,196 @@
-import User from '../models/User.js';
-import Recipe from '../models/Recipe.js';
+import User from '../models/userModel.js';
+import Recipe from '../models/recipeModel.js';
+import Comment from '../models/commentModel.js';
 
-// Get user profile
-export const getProfile = async (req, res) => {
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
+export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Update user profile
-export const updateProfile = async (req, res) => {
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+export const updateUserProfile = async (req, res) => {
   try {
-    const { username, email } = req.body;
-
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    user.username = username || user.username;
-    user.email = email || user.email;
-    await user.save();
-
-    res.json({ message: 'Profile updated' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    
+    if (user) {
+      user.username = req.body.username || user.username;
+      user.email = req.body.email || user.email;
+      user.location = req.body.location || user.location;
+      user.avatar = req.body.avatar || user.avatar;
+      
+      if (req.body.preferences) {
+        user.preferences = {
+          ...user.preferences,
+          ...req.body.preferences
+        };
+      }
+      
+      if (req.body.password) {
+        user.password = req.body.password;
+      }
+      
+      const updatedUser = await user.save();
+      
+      res.json({
+        _id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        location: updatedUser.location,
+        avatar: updatedUser.avatar,
+        preferences: updatedUser.preferences,
+        token: generateToken(updatedUser._id)
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Get user favorites
-export const getFavorites = async (req, res) => {
+// @desc    Get user's created recipes
+// @route   GET /api/users/recipes
+// @access  Private
+export const getUserRecipes = async (req, res) => {
+  try {
+    const recipes = await Recipe.find({ createdBy: req.user._id })
+      .sort({ createdAt: -1 });
+    
+    res.json(recipes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get user's favorite recipes
+// @route   GET /api/users/favorites
+// @access  Private
+export const getUserFavorites = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('favorites');
+    
     res.json(user.favorites);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Add recipe to favorites
-export const addFavorite = async (req, res) => {
+// @desc    Add recipe to favorites
+// @route   POST /api/users/favorites
+// @access  Private
+export const addToFavorites = async (req, res) => {
   try {
-    const recipeId = req.body.recipeId;
+    const { recipeId } = req.body;
+    
     const user = await User.findById(req.user._id);
-
+    
     if (!user.favorites.includes(recipeId)) {
       user.favorites.push(recipeId);
       await user.save();
     }
-
+    
     res.json({ message: 'Recipe added to favorites' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Remove recipe from favorites
-export const removeFavorite = async (req, res) => {
+// @desc    Remove recipe from favorites
+// @route   DELETE /api/users/favorites/:id
+// @access  Private
+export const removeFromFavorites = async (req, res) => {
   try {
-    const { recipeId } = req.params;
     const user = await User.findById(req.user._id);
-
-    user.favorites = user.favorites.filter(id => id.toString() !== recipeId);
+    
+    user.favorites = user.favorites.filter(
+      favorite => favorite.toString() !== req.params.id
+    );
+    
     await user.save();
-
+    
     res.json({ message: 'Recipe removed from favorites' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Get user bookmarks
-export const getBookmarks = async (req, res) => {
+// @desc    Get user's bookmarked recipes
+// @route   GET /api/users/bookmarks
+// @access  Private
+export const getUserBookmarks = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('bookmarks');
+    
     res.json(user.bookmarks);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Add recipe to bookmarks
-export const addBookmark = async (req, res) => {
+// @desc    Add recipe to bookmarks
+// @route   POST /api/users/bookmarks
+// @access  Private
+export const addToBookmarks = async (req, res) => {
   try {
-    const recipeId = req.body.recipeId;
+    const { recipeId } = req.body;
+    
     const user = await User.findById(req.user._id);
-
+    
     if (!user.bookmarks.includes(recipeId)) {
       user.bookmarks.push(recipeId);
       await user.save();
     }
-
+    
     res.json({ message: 'Recipe added to bookmarks' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Remove recipe from bookmarks
-export const removeBookmark = async (req, res) => {
+// @desc    Remove recipe from bookmarks
+// @route   DELETE /api/users/bookmarks/:id
+// @access  Private
+export const removeFromBookmarks = async (req, res) => {
   try {
-    const { recipeId } = req.params;
     const user = await User.findById(req.user._id);
-
-    user.bookmarks = user.bookmarks.filter(id => id.toString() !== recipeId);
+    
+    user.bookmarks = user.bookmarks.filter(
+      bookmark => bookmark.toString() !== req.params.id
+    );
+    
     await user.save();
-
+    
     res.json({ message: 'Recipe removed from bookmarks' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get user's reviews/comments
+// @route   GET /api/users/reviews
+// @access  Private
+export const getUserReviews = async (req, res) => {
+  try {
+    const reviews = await Comment.find({ user: req.user._id })
+      .populate('recipe')
+      .sort({ createdAt: -1 });
+    
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

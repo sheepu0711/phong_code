@@ -1,14 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { searchRecipes, getPopularSearches } from '../controllers/searchController.js';
+
 const router = express.Router();
 
-// Import individual route files
-const userRoutes = require('./userRoute');
-const recipeRoutes = require('./recipeRoutes');
-const reviewRoutes = require('./commentRoute');
+router.get('/', searchRecipes);
+router.get('/popular', getPopularSearches);
 
-// Use individual routers for different endpoints
-router.use('/users', userRoutes);
-router.use('/recipes', recipeRoutes);
-router.use('/reviews', reviewRoutes);
-
-module.exports = router;
+export default router;
