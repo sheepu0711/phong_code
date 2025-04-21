@@ -1,0 +1,88 @@
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.content-wrapper {
+  display: flex;
+  flex: 1;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+  background-color: #ffffff;
+  margin-left: 220px; /* Match sidebar width */
+  padding-top: 80px; /* Add space for the fixed header */
+  min-height: calc(100vh - 300px); /* Ensure minimum height to push footer down */
+}
+
+/* Fixed width sidebar */
+.sidebar {
+  position: fixed;
+  width: 220px;
+  height: 100vh;
+  background-color: #ffffff;
+  border-right: 1px solid #e9e9e9;
+  padding: 10px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+/* Search box styling */
+.search-container {
+  max-width: 600px;
+  margin: 0 auto;
+  margin-top: 20px;
+}
+
+/* Recipe card styling */
+.recipe-card {
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.recipe-card:hover {
+  transform: translateY(-5px);
+}
+
+.recipe-tag {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.banner {
+  width: 100%;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.section-title {
+  margin: 30px 0 20px 0;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Styles for the header */
+.header {
+  position: fixed;
+  top: 0;
+  left: 220px; /* Match sidebar width */
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 60px;
+  background-color: white;
+  border-bottom: 1px solid #e9e9e9;
+  z-index: 100;
+}
