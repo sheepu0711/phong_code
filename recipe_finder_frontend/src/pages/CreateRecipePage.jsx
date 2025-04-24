@@ -1,96 +1,126 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Box, Title, TextInput, Textarea, NumberInput, Select, MultiSelect, Button, Group, Paper, Divider, FileInput, Text, ActionIcon, SimpleGrid, Switch } from '@mantine/core';
-import { IconArrowLeft, IconUpload, IconTrash, IconPlus } from '@tabler/icons-react';
-import Header from '../components/Header';
-
+import {
+  ActionIcon,
+  Box,
+  Button,
+  Divider,
+  FileInput,
+  Group,
+  MultiSelect,
+  NumberInput,
+  Paper,
+  Select,
+  SimpleGrid,
+  Switch,
+  Text,
+  TextInput,
+  Textarea,
+  Title,
+  Tooltip,
+} from "@mantine/core";
+import {
+  IconArrowLeft,
+  IconPlus,
+  IconTrash,
+  IconUpload,
+} from "@tabler/icons-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../api/api";
+import Header from "../components/Header";
+import { useAuth } from "../contexts/AuthContext";
+import { uploadImage } from "../utils/imageUpload";
 function CreateRecipePage() {
   const navigate = useNavigate();
+  const { isAuthenticated, userInfo } = useAuth();
 
   // Recipe details state
-  const [recipeTitle, setRecipeTitle] = useState('');
-  const [recipeDescription, setRecipeDescription] = useState('');
+  const [recipeTitle, setRecipeTitle] = useState("");
+  const [recipeDescription, setRecipeDescription] = useState("");
   const [servings, setServings] = useState(4);
   const [prepTime, setPrepTime] = useState(15);
   const [cookTime, setCookTime] = useState(30);
-  const [difficulty, setDifficulty] = useState('Medium');
-  const [cuisine, setCuisine] = useState('');
+  const [difficulty, setDifficulty] = useState("Medium");
+  const [cuisine, setCuisine] = useState("");
   const [tags, setTags] = useState([]);
   const [mainImage, setMainImage] = useState(null);
+  const [mainImageUrl, setMainImageUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Ingredients state
-  const [ingredients, setIngredients] = useState([{ id: 1, name: '', amount: '', unit: '' }]);
+  const [ingredients, setIngredients] = useState([
+    { id: 1, name: "", amount: "", unit: "" },
+  ]);
 
   // Instructions state
-  const [steps, setSteps] = useState([{ id: 1, description: '', image: null }]);
+  const [steps, setSteps] = useState([{ id: 1, description: "", image: null }]);
 
   // Recipe notes
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
 
   // Nutrition information
-  const [calories, setCalories] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carbs, setCarbs] = useState('');
-  const [fat, setFat] = useState('');
+  const [calories, setCalories] = useState("");
+  const [protein, setProtein] = useState("");
+  const [carbs, setCarbs] = useState("");
+  const [fat, setFat] = useState("");
 
   // Privacy settings
   const [isPublic, setIsPublic] = useState(true);
 
   const difficultyOptions = [
-    { value: 'Easy', label: 'Easy' },
-    { value: 'Medium', label: 'Medium' },
-    { value: 'Hard', label: 'Hard' }
+    { value: "Easy", label: "Easy" },
+    { value: "Medium", label: "Medium" },
+    { value: "Hard", label: "Hard" },
   ];
 
   const cuisineOptions = [
-    { value: 'Italian', label: 'Italian' },
-    { value: 'Mexican', label: 'Mexican' },
-    { value: 'Chinese', label: 'Chinese' },
-    { value: 'Japanese', label: 'Japanese' },
-    { value: 'Indian', label: 'Indian' },
-    { value: 'French', label: 'French' },
-    { value: 'Thai', label: 'Thai' },
-    { value: 'Mediterranean', label: 'Mediterranean' },
-    { value: 'American', label: 'American' },
-    { value: 'Other', label: 'Other' }
+    { value: "Italian", label: "Italian" },
+    { value: "Mexican", label: "Mexican" },
+    { value: "Chinese", label: "Chinese" },
+    { value: "Japanese", label: "Japanese" },
+    { value: "Indian", label: "Indian" },
+    { value: "French", label: "French" },
+    { value: "Thai", label: "Thai" },
+    { value: "Mediterranean", label: "Mediterranean" },
+    { value: "American", label: "American" },
+    { value: "Other", label: "Other" },
   ];
 
   const unitOptions = [
-    { value: 'g', label: 'grams (g)' },
-    { value: 'kg', label: 'kilograms (kg)' },
-    { value: 'ml', label: 'milliliters (ml)' },
-    { value: 'l', label: 'liters (l)' },
-    { value: 'tsp', label: 'teaspoons (tsp)' },
-    { value: 'tbsp', label: 'tablespoons (tbsp)' },
-    { value: 'cup', label: 'cups' },
-    { value: 'oz', label: 'ounces (oz)' },
-    { value: 'lb', label: 'pounds (lb)' },
-    { value: 'pinch', label: 'pinch' },
-    { value: 'piece', label: 'piece(s)' },
-    { value: '', label: 'none' }
+    { value: "g", label: "grams (g)" },
+    { value: "kg", label: "kilograms (kg)" },
+    { value: "ml", label: "milliliters (ml)" },
+    { value: "l", label: "liters (l)" },
+    { value: "tsp", label: "teaspoons (tsp)" },
+    { value: "tbsp", label: "tablespoons (tbsp)" },
+    { value: "cup", label: "cups" },
+    { value: "oz", label: "ounces (oz)" },
+    { value: "lb", label: "pounds (lb)" },
+    { value: "pinch", label: "pinch" },
+    { value: "piece", label: "piece(s)" },
+    { value: "", label: "none" },
   ];
 
   const tagOptions = [
-    { value: 'Vegetarian', label: 'Vegetarian' },
-    { value: 'Vegan', label: 'Vegan' },
-    { value: 'Gluten-Free', label: 'Gluten-Free' },
-    { value: 'Dairy-Free', label: 'Dairy-Free' },
-    { value: 'Low-Carb', label: 'Low-Carb' },
-    { value: 'Keto', label: 'Keto' },
-    { value: 'Paleo', label: 'Paleo' },
-    { value: 'High-Protein', label: 'High-Protein' },
-    { value: 'Low-Fat', label: 'Low-Fat' },
-    { value: 'Quick', label: 'Quick' },
-    { value: 'Budget', label: 'Budget' },
-    { value: 'Kid-Friendly', label: 'Kid-Friendly' },
-    { value: 'Dessert', label: 'Dessert' },
-    { value: 'Breakfast', label: 'Breakfast' },
-    { value: 'Lunch', label: 'Lunch' },
-    { value: 'Dinner', label: 'Dinner' },
-    { value: 'Snack', label: 'Snack' },
-    { value: 'Appetizer', label: 'Appetizer' },
-    { value: 'Side Dish', label: 'Side Dish' },
-    { value: 'Main Course', label: 'Main Course' }
+    { value: "Vegetarian", label: "Vegetarian" },
+    { value: "Vegan", label: "Vegan" },
+    { value: "Gluten-Free", label: "Gluten-Free" },
+    { value: "Dairy-Free", label: "Dairy-Free" },
+    { value: "Low-Carb", label: "Low-Carb" },
+    { value: "Keto", label: "Keto" },
+    { value: "Paleo", label: "Paleo" },
+    { value: "High-Protein", label: "High-Protein" },
+    { value: "Low-Fat", label: "Low-Fat" },
+    { value: "Quick", label: "Quick" },
+    { value: "Budget", label: "Budget" },
+    { value: "Kid-Friendly", label: "Kid-Friendly" },
+    { value: "Dessert", label: "Dessert" },
+    { value: "Breakfast", label: "Breakfast" },
+    { value: "Lunch", label: "Lunch" },
+    { value: "Dinner", label: "Dinner" },
+    { value: "Snack", label: "Snack" },
+    { value: "Appetizer", label: "Appetizer" },
+    { value: "Side Dish", label: "Side Dish" },
+    { value: "Main Course", label: "Main Course" },
   ];
 
   // Handler functions
@@ -99,66 +129,127 @@ function CreateRecipePage() {
   };
 
   const addIngredient = () => {
-    const newId = ingredients.length > 0 ? Math.max(...ingredients.map(i => i.id)) + 1 : 1;
-    setIngredients([...ingredients, { id: newId, name: '', amount: '', unit: '' }]);
+    const newId =
+      ingredients.length > 0
+        ? Math.max(...ingredients.map((i) => i.id)) + 1
+        : 1;
+    setIngredients([
+      ...ingredients,
+      { id: newId, name: "", amount: "", unit: "" },
+    ]);
   };
 
   const removeIngredient = (id) => {
     if (ingredients.length > 1) {
-      setIngredients(ingredients.filter(ingredient => ingredient.id !== id));
+      setIngredients(ingredients.filter((ingredient) => ingredient.id !== id));
     }
   };
 
   const updateIngredient = (id, field, value) => {
-    setIngredients(ingredients.map(ingredient =>
-      ingredient.id === id ? { ...ingredient, [field]: value } : ingredient
-    ));
+    setIngredients(
+      ingredients.map((ingredient) =>
+        ingredient.id === id ? { ...ingredient, [field]: value } : ingredient
+      )
+    );
   };
 
   const addStep = () => {
-    const newId = steps.length > 0 ? Math.max(...steps.map(s => s.id)) + 1 : 1;
-    setSteps([...steps, { id: newId, description: '', image: null }]);
+    const newId =
+      steps.length > 0 ? Math.max(...steps.map((s) => s.id)) + 1 : 1;
+    setSteps([...steps, { id: newId, description: "", image: null }]);
   };
 
   const removeStep = (id) => {
     if (steps.length > 1) {
-      setSteps(steps.filter(step => step.id !== id));
+      setSteps(steps.filter((step) => step.id !== id));
     }
   };
 
   const updateStep = (id, field, value) => {
-    setSteps(steps.map(step =>
-      step.id === id ? { ...step, [field]: value } : step
-    ));
+    setSteps(
+      steps.map((step) => (step.id === id ? { ...step, [field]: value } : step))
+    );
   };
 
-  const handleSubmit = (e) => {
+  const handleMainImageUpload = async (file) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadImage(file);
+
+      setMainImageUrl(imageUrl);
+      setMainImage(file);
+
+      console.log(
+        "Đã tải ảnh lên thành công:",
+        imageUrl.substring(0, 50) + "..."
+      );
+    } catch (error) {
+      console.error("Error uploading main image:", error);
+      alert(error.message || "Failed to upload image. Please try again.");
+      setMainImage(null);
+      setMainImageUrl("");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleStepImageUpload = async (file, stepId) => {
+    if (!file) return;
+
+    try {
+      const imageUrl = await uploadImage(file);
+
+      console.log(
+        `Đã tải ảnh cho bước ${stepId} thành công:`,
+        imageUrl.substring(0, 50) + "..."
+      );
+
+      setSteps(
+        steps.map((step) =>
+          step.id === stepId ? { ...step, imageUrl, image: file } : step
+        )
+      );
+    } catch (error) {
+      console.error(`Error uploading image for step ${stepId}:`, error);
+      alert(error.message || "Không thể tải ảnh lên. Vui lòng thử lại.");
+
+      // Reset ảnh cho bước này
+      setSteps(
+        steps.map((step) =>
+          step.id === stepId ? { ...step, imageUrl: "", image: null } : step
+        )
+      );
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Form validation
     if (!recipeTitle) {
-      alert('Please enter a recipe title');
+      alert("Please enter a recipe title");
       return;
     }
 
     if (!recipeDescription) {
-      alert('Please enter a recipe description');
+      alert("Please enter a recipe description");
       return;
     }
 
-    if (ingredients.some(ingredient => !ingredient.name)) {
-      alert('Please fill in all ingredient names');
+    if (ingredients.some((ingredient) => !ingredient.name)) {
+      alert("Please fill in all ingredient names");
       return;
     }
 
-    if (steps.some(step => !step.description)) {
-      alert('Please fill in all instruction steps');
+    if (steps.some((step) => !step.description)) {
+      alert("Please fill in all instruction steps");
       return;
     }
 
-    // In a real app, you would submit the form data to a server
-    // For this example, we'll just log it and navigate to the home page
-    console.log({
+    // Chuẩn bị dữ liệu để gửi lên server
+    const recipeData = {
       title: recipeTitle,
       description: recipeDescription,
       servings,
@@ -167,21 +258,42 @@ function CreateRecipePage() {
       difficulty,
       cuisine,
       tags,
-      mainImage,
+      mainImage: mainImageUrl, // Sử dụng URL ảnh đã upload
       ingredients,
-      steps,
+      steps: steps.map((step) => ({
+        ...step,
+        image: step.imageUrl, // Sử dụng URL ảnh đã upload
+      })),
       notes,
       nutrition: {
         calories,
         protein,
         carbs,
-        fat
+        fat,
       },
-      isPublic
-    });
+      isPublic,
+      createdBy: userInfo?.id, // Thêm ID của người dùng
+    };
 
-    // Navigate to home page after submission
-    navigate('/');
+    try {
+      const response = await apiRequest("post", "/recipes", recipeData);
+      if (response) {
+        alert("Create recipe success");
+        // Navigate to home page after submission
+        navigate("/recipes");
+      }
+    } catch (error) {
+      if (error.response) {
+        const errorMessage =
+          error.response.data?.message || "Create recipe failed";
+        alert(errorMessage);
+      } else if (error.request) {
+        alert("Cannot connect to server. Please check your network.");
+      } else {
+        alert(error.message || "An error occurred during create recipe");
+      }
+      return;
+    }
   };
 
   return (
@@ -199,11 +311,15 @@ function CreateRecipePage() {
       </Button>
       <Box p="xl">
         <Paper shadow="md" p="xl" withBorder>
-          <Title order={1} mb="lg">Create New Recipe</Title>
+          <Title order={1} mb="lg">
+            Create New Recipe
+          </Title>
 
           <form onSubmit={handleSubmit}>
             {/* Basic Recipe Information */}
-            <Title order={3} mb="md">Recipe Details</Title>
+            <Title order={3} mb="md">
+              Recipe Details
+            </Title>
 
             <TextInput
               label="Recipe Title"
@@ -287,15 +403,35 @@ function CreateRecipePage() {
               placeholder="Upload a photo of your finished dish"
               accept="image/*"
               value={mainImage}
-              onChange={setMainImage}
+              onChange={handleMainImageUpload}
               icon={<IconUpload size={14} />}
+              loading={isUploading}
               mb="xl"
             />
+
+            {mainImageUrl && (
+              <Box mb="xl">
+                <Text size="sm" mb="xs">
+                  Preview:
+                </Text>
+                <img
+                  src={mainImageUrl}
+                  alt="Recipe preview"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "200px",
+                    objectFit: "contain",
+                  }}
+                />
+              </Box>
+            )}
 
             <Divider my="xl" />
 
             {/* Ingredients Section */}
-            <Title order={3} mb="md">Ingredients</Title>
+            <Title order={3} mb="md">
+              Ingredients
+            </Title>
 
             {ingredients.map((ingredient, index) => (
               <Group key={ingredient.id} mb="md" align="flex-end">
@@ -303,7 +439,9 @@ function CreateRecipePage() {
                   label={index === 0 ? "Ingredient" : ""}
                   placeholder="e.g. Onion, Chicken breast"
                   value={ingredient.name}
-                  onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
+                  onChange={(e) =>
+                    updateIngredient(ingredient.id, "name", e.target.value)
+                  }
                   required
                   style={{ flex: 2 }}
                 />
@@ -312,7 +450,9 @@ function CreateRecipePage() {
                   label={index === 0 ? "Amount" : ""}
                   placeholder="e.g. 2, 1/2"
                   value={ingredient.amount}
-                  onChange={(e) => updateIngredient(ingredient.id, 'amount', e.target.value)}
+                  onChange={(e) =>
+                    updateIngredient(ingredient.id, "amount", e.target.value)
+                  }
                   style={{ flex: 1 }}
                 />
 
@@ -321,7 +461,9 @@ function CreateRecipePage() {
                   placeholder="Select unit"
                   data={unitOptions}
                   value={ingredient.unit}
-                  onChange={(value) => updateIngredient(ingredient.id, 'unit', value)}
+                  onChange={(value) =>
+                    updateIngredient(ingredient.id, "unit", value)
+                  }
                   style={{ flex: 1 }}
                   searchable
                 />
@@ -348,7 +490,9 @@ function CreateRecipePage() {
             <Divider my="xl" />
 
             {/* Instructions Section */}
-            <Title order={3} mb="md">Instructions</Title>
+            <Title order={3} mb="md">
+              Instructions
+            </Title>
 
             {steps.map((step, index) => (
               <Box key={step.id} mb="lg">
@@ -368,7 +512,9 @@ function CreateRecipePage() {
                   placeholder="Describe this step"
                   minRows={2}
                   value={step.description}
-                  onChange={(e) => updateStep(step.id, 'description', e.target.value)}
+                  onChange={(e) =>
+                    updateStep(step.id, "description", e.target.value)
+                  }
                   required
                   mb="md"
                 />
@@ -377,9 +523,26 @@ function CreateRecipePage() {
                   placeholder="Add photo for this step (optional)"
                   accept="image/*"
                   value={step.image}
-                  onChange={(file) => updateStep(step.id, 'image', file)}
+                  onChange={(file) => handleStepImageUpload(file, step.id)}
                   icon={<IconUpload size={14} />}
                 />
+
+                {step.imageUrl && (
+                  <Box mt="md">
+                    <Text size="sm" mb="xs">
+                      Preview:
+                    </Text>
+                    <img
+                      src={step.imageUrl}
+                      alt={`Step ${index + 1} preview`}
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "150px",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </Box>
+                )}
               </Box>
             ))}
 
@@ -395,7 +558,9 @@ function CreateRecipePage() {
             <Divider my="xl" />
 
             {/* Additional Information */}
-            <Title order={3} mb="md">Additional Information</Title>
+            <Title order={3} mb="md">
+              Additional Information
+            </Title>
 
             <Textarea
               label="Recipe Notes (Optional)"
@@ -406,7 +571,9 @@ function CreateRecipePage() {
               mb="xl"
             />
 
-            <Title order={4} mb="md">Nutrition Information (Optional)</Title>
+            <Title order={4} mb="md">
+              Nutrition Information (Optional)
+            </Title>
 
             <SimpleGrid cols={4} mb="xl">
               <TextInput
@@ -445,7 +612,9 @@ function CreateRecipePage() {
             <Divider my="xl" />
 
             {/* Privacy Settings */}
-            <Title order={3} mb="md">Privacy Settings</Title>
+            <Title order={3} mb="md">
+              Privacy Settings
+            </Title>
 
             <Group mb="xl">
               <Switch
@@ -457,12 +626,25 @@ function CreateRecipePage() {
 
             {/* Submit Buttons */}
             <Group position="right" mt="xl">
-              <Button variant="outline" onClick={() => navigate('/')}>
+              <Button variant="outline" onClick={() => navigate("/")}>
                 Cancel
               </Button>
-              <Button type="submit" color="orange">
-                Publish Recipe
-              </Button>
+              <Tooltip
+                label="Need login to create recipe"
+                disabled={isAuthenticated}
+                position="top"
+                withArrow
+              >
+                <span>
+                  <Button
+                    type="submit"
+                    color="orange"
+                    disabled={!isAuthenticated}
+                  >
+                    Publish Recipe
+                  </Button>
+                </span>
+              </Tooltip>
             </Group>
           </form>
         </Paper>

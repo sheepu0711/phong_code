@@ -1,19 +1,19 @@
 import React from 'react';
 
 import { Divider } from '@mantine/core';
-import { Routes, Route } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 
 import Footer from './components/Footer';
 import SideBar from './components/SideBar';
 
-import HomePage from './pages/HomePage';
 import AccountPage from './pages/AccountPage';
-import RecipePage from './pages/RecipePage';
+import CreateRecipePage from './pages/CreateRecipePage';
+import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RecipeDetailPage from './pages/RecipeDetailPage';
+import RecipePage from './pages/RecipePage';
 import RegisterPage from './pages/RegisterPage';
 import SearchPage from './pages/SearchPage';
-import CreateRecipePage from './pages/CreateRecipePage';
 
 import './App.css';
 

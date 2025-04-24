@@ -1,6 +1,6 @@
+import Comment from '../models/commentModel.js';
 import Recipe from '../models/recipeModel.js';
 import User from '../models/userModel.js';
-import Comment from '../models/commentModel.js';
 
 // @desc    Get all recipes
 // @route   GET /api/recipes
@@ -9,28 +9,30 @@ export const getRecipes = async (req, res) => {
   try {
     const pageSize = 12;
     const page = Number(req.query.page) || 1;
-    
+
+    const userId = req.query.userId;
+
     const keyword = req.query.keyword
       ? {
-          $or: [
-            { title: { $regex: req.query.keyword, $options: 'i' } },
-            { description: { $regex: req.query.keyword, $options: 'i' } }
-          ]
-        }
+        $or: [
+          { title: { $regex: req.query.keyword, $options: 'i' } },
+          { description: { $regex: req.query.keyword, $options: 'i' } }
+        ]
+      }
       : {};
-      
+
     const category = req.query.category
       ? { category: req.query.category }
       : {};
-      
+
     const cuisine = req.query.cuisine
       ? { cuisine: req.query.cuisine }
       : {};
-      
+
     const tags = req.query.tags
       ? { tags: { $in: req.query.tags.split(',') } }
       : {};
-      
+
     const count = await Recipe.countDocuments({
       ...keyword,
       ...category,
@@ -38,7 +40,7 @@ export const getRecipes = async (req, res) => {
       ...tags,
       isPublic: true
     });
-    
+
     const recipes = await Recipe.find({
       ...keyword,
       ...category,
@@ -50,7 +52,7 @@ export const getRecipes = async (req, res) => {
       .limit(pageSize)
       .skip(pageSize * (page - 1))
       .sort({ createdAt: -1 });
-    
+
     res.json({
       recipes,
       page,
@@ -69,7 +71,7 @@ export const getRecipeById = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id)
       .populate('createdBy', 'username avatar location');
-    
+
     if (recipe) {
       res.json(recipe);
     } else {
@@ -102,7 +104,7 @@ export const createRecipe = async (req, res) => {
       notes,
       isPublic
     } = req.body;
-    
+
     const recipe = new Recipe({
       title,
       description,
@@ -121,9 +123,9 @@ export const createRecipe = async (req, res) => {
       isPublic,
       createdBy: req.user._id
     });
-    
+
     const createdRecipe = await recipe.save();
-    
+
     res.status(201).json(createdRecipe);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -136,16 +138,16 @@ export const createRecipe = async (req, res) => {
 export const updateRecipe = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
-    
+
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
-    
+
     // Check if user is recipe owner
     if (recipe.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this recipe' });
     }
-    
+
     const {
       title,
       description,
@@ -163,7 +165,7 @@ export const updateRecipe = async (req, res) => {
       notes,
       isPublic
     } = req.body;
-    
+
     recipe.title = title || recipe.title;
     recipe.description = description || recipe.description;
     recipe.ingredients = ingredients || recipe.ingredients;
@@ -179,9 +181,9 @@ export const updateRecipe = async (req, res) => {
     recipe.nutrition = nutrition || recipe.nutrition;
     recipe.notes = notes || recipe.notes;
     recipe.isPublic = isPublic !== undefined ? isPublic : recipe.isPublic;
-    
+
     const updatedRecipe = await recipe.save();
-    
+
     res.json(updatedRecipe);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -194,35 +196,37 @@ export const updateRecipe = async (req, res) => {
 export const deleteRecipe = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
-    
+
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
-    
+
     // Check if user is recipe owner
     if (recipe.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to delete this recipe' });
     }
-    
+
     // Delete related comments
     await Comment.deleteMany({ recipe: req.params.id });
-    
+
     // Remove from user favorites and bookmarks
     await User.updateMany(
-      { $or: [
-        { favorites: req.params.id },
-        { bookmarks: req.params.id }
-      ]},
-      { 
-        $pull: { 
+      {
+        $or: [
+          { favorites: req.params.id },
+          { bookmarks: req.params.id }
+        ]
+      },
+      {
+        $pull: {
           favorites: req.params.id,
           bookmarks: req.params.id
-        } 
+        }
       }
     );
-    
+
     await recipe.deleteOne();
-    
+
     res.json({ message: 'Recipe removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -235,11 +239,11 @@ export const deleteRecipe = async (req, res) => {
 export const getRelatedRecipes = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
-    
+
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
-    
+
     // Find recipes with similar tags or category
     const relatedRecipes = await Recipe.find({
       _id: { $ne: req.params.id },
@@ -252,7 +256,7 @@ export const getRelatedRecipes = async (req, res) => {
     })
       .populate('createdBy', 'username')
       .limit(3);
-    
+
     res.json(relatedRecipes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -268,7 +272,7 @@ export const getPopularRecipes = async (req, res) => {
       .sort({ rating: -1, reviewCount: -1 })
       .populate('createdBy', 'username avatar')
       .limit(4);
-    
+
     res.json(recipes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -284,7 +288,7 @@ export const getRecentRecipes = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate('createdBy', 'username avatar')
       .limit(4);
-    
+
     res.json(recipes);
   } catch (error) {
     res.status(500).json({ message: error.message });

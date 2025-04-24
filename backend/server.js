@@ -1,15 +1,15 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+import mongoose from 'mongoose';
 
 import authRoutes from './src/routes/authRoutes.js';
-import userRoutes from './src/routes/userRoute.js';
-import recipeRoutes from './src/routes/recipeRoutes.js';
+import categoryRoutes from './src/routes/categoryRouates.js';
 import commentRoutes from './src/routes/commentRoute.js';
+import recipeRoutes from './src/routes/recipeRoutes.js';
 import searchRoutes from './src/routes/searchRoutes.js';
 import uploadRoutes from './src/routes/uploadRoutes.js';
-import categoryRoutes from './src/routes/categoryRouates.js';
+import userRoutes from './src/routes/userRoute.js';
 
 dotenv.config();
 const app = express();
@@ -35,5 +35,5 @@ mongoose.connect("mongodb://localhost:27017")
   .catch((err) => console.error('MongoDB connection error:', err));
 
 // Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
